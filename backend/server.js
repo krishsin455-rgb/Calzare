@@ -20,6 +20,7 @@ import orderRoutes from "./routes/order.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
 import superAdminRoutes from "./routes/superadmin.routes.js";
+import contentRoutes from "./routes/content.routes.js";
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -54,6 +55,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api", rateLimit({ windowMs: 15 * 60 * 1000, limit: 300 }));
 app.get("/api/health", (_req, res) => res.json({ success: true, message: "Calzare API is healthy" }));
 app.use("/api/auth", authRoutes);
+app.use("/api/content", contentRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/payments", paymentRoutes);

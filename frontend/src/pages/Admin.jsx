@@ -1,5 +1,6 @@
 
 import { useEffect, useMemo, useState } from "react";
+import ContentEditor from "./ContentEditor";
 import { api, money, imageUrl } from "../services/api";
 import { useStore } from "../context/StoreContext";
 
@@ -23,6 +24,8 @@ const navItems = [
   { id: "orders", icon: "🛒", label: "Orders" },
   { id: "products", icon: "◇", label: "Products" },
   { id: "users", icon: "♙", label: "Users" },
+  { id: "homepage", icon: "⌂", label: "Homepage" },
+{ id: "story", icon: "✦", label: "Our Story" },
 ];
 
 export default function Admin() {
@@ -462,6 +465,10 @@ th {
                 ? "Products"
                 : tab === "orders"
                 ? "Orders"
+                : tab === "homepage"
+                ? "Homepage"
+                : tab === "story"
+                ? "Our Story"
                 : "User Management"}
             </h1>
           </div>
@@ -1088,6 +1095,15 @@ th {
                   <div className="cal-empty">No registered users found.</div>
                 )}
               </section>
+            )}
+                        {/* HOMEPAGE CONTENT EDITOR */}
+            {tab === "homepage" && (
+              <ContentEditor section="homepage" />
+            )}
+
+            {/* OUR STORY CONTENT EDITOR */}
+            {tab === "story" && (
+              <ContentEditor section="story" />
             )}
           </>
         )}

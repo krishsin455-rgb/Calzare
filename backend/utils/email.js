@@ -1,34 +1,32 @@
 
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: Number(process.env.SMTP_PORT || 587) === 465,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
 export const testEmailConnection = async () => {
-  if (!process.env.RESEND_API_KEY) {
-    throw new Error("RESEND_API_KEY is missing");
-  }
-  return true;
+  return transporter.verify();
 };
 
 export const sendEmail = async ({ to, subject, html }) => {
-  if (!process.env.RESEND_API_KEY) {
-    throw new Error("RESEND_API_KEY is missing");
-  }
-
   const from =
-    process.env.EMAIL_FROM || "Calzare <onboarding@resend.dev>";
+    process.env.EMAIL_FROM || process.env.SMTP_USER;
 
-  const { data, error } = await resend.emails.send({
-    from,
-    to: [to],
-    subject,
-    html
-  });
-
-  if (error) {
-    console.error("Resend email error:", error);
-    throw new Error(error.message || "Email sending failed");
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    throw new Error("Gmail SMTP credentials are missing.");
   }
 
-  return data;
+  return transporter.sendMail({
+    from,
+    to,
+    subject,
+    html,
+  });
 };

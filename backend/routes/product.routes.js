@@ -30,7 +30,7 @@ router.get("/", async (req, res) => {
   const { category, collection, search, featured, limit = 100 } = req.query;
   const filter = { active: true };
   if (category) filter.category = category;
-  if (collection) filter.collection = productCollection ;
+  if (collection) filter.collection = collection;
   if (featured === "true") filter.featured = true;
   if (search) filter.$text = { $search: search };
   const products = await Product.find(filter).sort({ createdAt: -1 }).limit(Math.min(Number(limit) || 100, 100));

@@ -1,10 +1,53 @@
+
 import { Router } from "express";
-import Contact from "../models/Contact.js";
+import WebsiteContent from "../models/WebsiteContent.js";
+import { protect, adminOnly } from "../middleware/auth.js";
+
 const router = Router();
-router.post("/", async (req, res) => {
-  const { name, email, message } = req.body;
-  if (!name || !email || !message) return res.status(400).json({ message: "Please complete all fields" });
-  await Contact.create({ name, email, message });
-  res.status(201).json({ message: "Thanks for contacting Calzare. We'll get back to you." });
+
+// Public: get homepage and story content
+router.get("/", async (_req, res) => {
+  try {
+    let content = await WebsiteContent.findOne({ key: "main" });
+
+    if (!content) {
+      content = await WebsiteContent.create({ key: "main" });
+    }
+
+    res.json({
+      homepage: content.homepage,
+      story: content.story,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Could not load website content." });
+  }
 });
+
+// Admin: save homepage and story content
+router.put("/", protect, adminOnly, async (req, res) => {
+  try {
+    const { homepage, story } = req.body;
+
+    const content = await WebsiteContent.findOneAndUpdate(
+      { key: "main" },
+      {
+        $set: {
+          ...(homepage !== undefined ? { homepage } : {}),
+          ...(story !== undefined ? { story } : {}),
+        },
+      },
+      { new: true, upsert: true, runValidators: true }
+    );
+
+    res.json({
+      success: true,
+      message: "Website content saved successfully.",
+      homepage: content.homepage,
+      story: content.story,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Could not save website content." });
+  }
+});
+
 export default router;
