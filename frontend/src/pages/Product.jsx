@@ -1,0 +1,8 @@
+import { useEffect,useState } from "react";
+import { useParams } from "react-router-dom";
+import { api,money,imageUrl } from "../services/api";
+import { useStore } from "../context/StoreContext";
+export default function Product(){const {slug}=useParams();const [p,setP]=useState(null);const [size,setSize]=useState("");const [msg,setMsg]=useState("");const {addToCart}=useStore();
+useEffect(()=>{api(`/products/${slug}`).then(d=>{setP(d.product);setSize(d.product.sizes?.[0]||"")}).catch(e=>setMsg(e.message))},[slug]);
+if(!p)return <main className="page-shell">{msg||"Loading product…"}</main>;
+return <main className="page-shell product-detail"><div className="detail-images">{(p.images||[]).map((im,i)=><img key={i} src={imageUrl(im)} alt={`${p.name} ${i+1}`}/>)}</div><div className="detail-info"><p className="eyebrow">{p.category} / {p.collection}</p><h1>{p.name}</h1><div className="price detail-price">{money(p.price)} {p.compareAtPrice>p.price&&<del>{money(p.compareAtPrice)}</del>}</div><p>{p.description}</p><label className="field-label">SELECT SIZE</label><div className="size-list">{p.sizes?.map(s=><button className={size===s?"size selected":"size"} key={s} onClick={()=>setSize(s)}>{s}</button>)}</div><button className="btn btn-dark full" disabled={!p.stock} onClick={()=>{addToCart(p,size);setMsg("Added to your bag.")}}>{p.stock?"ADD TO BAG":"SOLD OUT"}</button>{msg&&<p className="notice">{msg}</p>}<p className="small-note">Free shipping on orders above ₹999. Secure checkout.</p><div className="detail-description"><h3>Details</h3><p>{p.description}</p><p>Available stock: {p.stock}</p></div></div></main>}
