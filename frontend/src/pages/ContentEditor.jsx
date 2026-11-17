@@ -46,8 +46,9 @@ const storyDefaults = {
     "Calzare is built around thoughtful design, versatile silhouettes and the small details that make getting dressed feel effortless.",
     "We believe great footwear should bring together comfort, quality and timeless style.",
   ],
-  image:
+   image:
     "https://images.unsplash.com/photo-1520256862855-9986b7946c50?w=1600&q=85",
+  video: "",
   buttonText: "EXPLORE COLLECTION",
   buttonLink: "/shop",
 };
@@ -98,6 +99,7 @@ export default function ContentEditor({ section = "homepage" }) {
   const [form, setForm] = useState(defaults);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -131,7 +133,36 @@ export default function ContentEditor({ section = "homepage" }) {
       active = false;
     };
   }, [section]);
+const handleVideoUpload = async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
 
+  if (file.type !== "video/mp4") {
+    setMessage("Please select an MP4 video.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("video", file);
+
+  setUploading(true);
+  setMessage("Uploading video...");
+
+  try {
+    const data = await api("/content/upload-story-video", {
+      method: "POST",
+      body: formData,
+    });
+
+    update("video", data.video);
+    setMessage("Video uploaded! Click Save Changes to publish it.");
+  } catch (error) {
+    setMessage(error.message || "Video upload failed.");
+  } finally {
+    setUploading(false);
+    event.target.value = "";
+  }
+};
   const update = (key, value) => {
     setForm((current) => ({ ...current, [key]: value }));
   };
@@ -304,6 +335,37 @@ export default function ContentEditor({ section = "homepage" }) {
               Remove Last Paragraph
             </button>
           )}
+          <div className="cal-content-field">
+  <label>
+    <span>Upload Our Story Video (MP4)</span>
+    <input
+      type="file"
+      accept="video/mp4"
+      onChange={handleVideoUpload}
+      disabled={uploading}
+    />
+  </label>
+
+  {uploading && <p>Uploading video...</p>}
+
+  {form.video && (
+    <div>
+      <p>Video uploaded:</p>
+      <video
+        src={form.video}
+        controls
+        playsInline
+        style={{ width: "100%", maxWidth: "500px" }}
+      />
+      <button
+        type="button"
+        onClick={() => update("video", "")}
+      >
+        Remove Video
+      </button>
+    </div>
+  )}
+</div>
         </>
       )}
 

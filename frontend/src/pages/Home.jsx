@@ -57,7 +57,23 @@ const getImage = (src) => {
 
 export default function Home() {
   const [products, setProducts] = useState([]);
-  const [content, setContent] = useState(defaults);
+const [content, setContent] = useState(defaults);
+
+const [story, setStory] = useState({
+  eyebrow: "A NOTE FROM CALZARE",
+  headingLine1: "Style that feels",
+  headingLine2: "like you.",
+  description:
+    "We believe the best footwear earns its place in your everyday life.",
+  paragraphs: [
+    "Calzare is built around thoughtful design, versatile silhouettes and the small details that make getting dressed feel effortless.",
+    "We believe great footwear should bring together comfort, quality and timeless style."
+  ],
+  image:
+    "https://images.unsplash.com/photo-1520256862855-9986b7946c50?w=1600&q=85",
+  buttonText: "EXPLORE COLLECTION",
+  buttonLink: "/shop"
+});
 
   useEffect(() => {
     api("/products?limit=8")
@@ -65,13 +81,20 @@ export default function Home() {
       .catch(console.error);
 
     api("/content")
-      .then((data) => {
-        setContent((current) => ({
-          ...current,
-          ...(data.homepage || {})
-        }));
-      })
-      .catch(console.error);
+  .then((data) => {
+    setContent((current) => ({
+      ...current,
+      ...(data.homepage || {})
+    }));
+
+    if (data.story) {
+      setStory((current) => ({
+        ...current,
+        ...data.story
+      }));
+    }
+  })
+  .catch(console.error);
   }, []);
 
   const heroImage = getImage(content.heroImage) ||
@@ -225,6 +248,54 @@ export default function Home() {
             to={content.editorialButtonLink || "/shop?collection=New%20Arrivals"}
           >
             {content.editorialButtonText}
+          </Link>
+        </div>
+      </section>
+            {/* 7. OUR STORY */}
+      <section className="cal-story-section">
+       <div className="cal-story-image">
+  {story.video ? (
+    <video
+      src={story.video}
+      controls
+      playsInline
+      preload="metadata"
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+      }}
+    />
+  ) : (
+    story.image && (
+      <img
+        src={getImage(story.image)}
+        alt="The Calzare story"
+      />
+    )
+  )}
+</div>
+
+        <div className="cal-story-content">
+          <p className="eyebrow">{story.eyebrow}</p>
+
+          <h2>
+            {story.headingLine1}
+            <br />
+            <em>{story.headingLine2}</em>
+          </h2>
+
+          <p>{story.description}</p>
+
+          {(story.paragraphs || []).map((paragraph, index) => (
+            <p key={index}>{paragraph}</p>
+          ))}
+
+          <Link
+            to={story.buttonLink || "/shop"}
+            className="btn btn-dark"
+          >
+            {story.buttonText}
           </Link>
         </div>
       </section>
