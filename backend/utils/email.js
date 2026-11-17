@@ -1,45 +1,34 @@
 
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const getTransporter = () => {
-  return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    connectionTimeout: 20000,
-    greetingTimeout: 20000,
-    socketTimeout: 30000,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS?.replace(/\s/g, "")
-    }
-  });
-};
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const testEmailConnection = async () => {
-  const transporter = getTransporter();
-  try {
-    return await transporter.verify();
-  } finally {
-    transporter.close();
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY is missing");
   }
+  return true;
 };
 
 export const sendEmail = async ({ to, subject, html }) => {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    throw new Error("SMTP_USER or SMTP_PASS is missing");
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY is missing");
   }
 
-  const transporter = getTransporter();
+  const from =
+    process.env.EMAIL_FROM || "Calzare <onboarding@resend.dev>";
 
-  try {
-    return await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.SMTP_USER,
-      to,
-      subject,
-      html
-    });
-  } finally {
-    transporter.close();
+  const { data, error } = await resend.emails.send({
+    from,
+    to: [to],
+    subject,
+    html
+  });
+
+  if (error) {
+    console.error("Resend email error:", error);
+    throw new Error(error.message || "Email sending failed");
   }
+
+  return data;
 };
