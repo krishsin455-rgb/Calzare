@@ -74,8 +74,10 @@ const start = async () => {
   console.log(`Calzare API running on port ${port}`);
 });
   } catch (error) {
-    console.error("Startup failed:", error.message);
-    process.exit(1);
-  }
+  console.error("STARTUP FAILED:", error);
+  console.error("ERROR MESSAGE:", error.message);
+  console.error("ERROR STACK:", error.stack);
+  process.exit(1);
+}
 };
 start();
