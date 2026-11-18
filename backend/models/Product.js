@@ -35,6 +35,10 @@ const productSchema = new mongoose.Schema({
     default: 0
   },
   images: [{ type: String }],
+  video: {
+  type: String,
+  default: ""
+},
   sizes: [{ type: String }],
   colors: [{ type: String }],
   stock: {

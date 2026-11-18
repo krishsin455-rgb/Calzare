@@ -12,6 +12,7 @@ const blank = {
   price: 1999,
   compareAtPrice: 0,
   images: [],
+  video: "",
   sizes: ["36", "37", "38", "39", "40", "41"],
   colors: ["Black"],
   stock: 10,
@@ -181,6 +182,7 @@ export default function Admin() {
       ...blank,
       ...product,
       images: product.images || [],
+      video: product.video || "",
       sizes: product.sizes || [],
       colors: product.colors || [],
     });
@@ -213,6 +215,39 @@ export default function Admin() {
 
     event.target.value = "";
   };
+
+  const uploadVideo = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "video/mp4") {
+      setMsg("Please select an MP4 video.");
+      event.target.value = "";
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append("video", file);
+
+    try {
+      const result = await api("/products/upload-video", {
+        method: "POST",
+        body: fd,
+      });
+
+      setForm((current) => ({
+        ...current,
+        video: result.video || "",
+      }));
+
+      setMsg("Product video uploaded successfully.");
+    } catch (error) {
+      setMsg(error.message || "Video upload failed.");
+    }
+
+    event.target.value = "";
+  };
+
 
   const removeProduct = async (id) => {
     if (!window.confirm("Delete this product?")) return;
@@ -821,6 +856,33 @@ th {
                       ))}
                     </div>
                   )}
+                  <label className="cal-upload">
+  Upload Product Video
+  <input
+    type="file"
+    accept="video/mp4"
+    onChange={uploadVideo}
+  />
+  <small>MP4 video · Maximum 50 MB · One video per shoe</small>
+</label>
+
+{form.video && (
+  <div className="cal-upload-preview">
+    <video
+      src={imageUrl(form.video)}
+      controls
+      playsInline
+      preload="metadata"
+      style={{ width: "100%", maxWidth: "320px", borderRadius: "12px" }}
+    />
+    <button
+      type="button"
+      onClick={() => updateField("video", "")}
+    >
+      Remove Video
+    </button>
+  </div>
+)}
 
                   <label>
                     Sizes (comma separated)

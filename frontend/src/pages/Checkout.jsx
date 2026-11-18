@@ -6,7 +6,18 @@ export default function Checkout(){const {cart,setCart,user}=useStore();const na
 const subtotal=cart.reduce((s,i)=>s+i.product.price*i.quantity,0);const total=subtotal+(subtotal>=999?0:79);
 const loadRazorpay=()=>new Promise(resolve=>{if(window.Razorpay)return resolve(true);const s=document.createElement("script");s.src="https://checkout.razorpay.com/v1/checkout.js";s.onload=()=>resolve(true);s.onerror=()=>resolve(false);document.body.appendChild(s)});
 const submit=async e=>{e.preventDefault();if(!cart.length)return nav("/cart");setBusy(true);setError("");try{
- const payload={items:cart.map(i=>({productId:i.product._id,size:i.size,quantity:i.quantity})),shippingAddress:a,paymentMethod:method};
+const payload = {
+  items: cart.map((i) => ({
+    product: i.product._id,
+    name: i.product.name,
+    image: i.product.image,
+    price: i.product.price,
+    size: i.size,
+    quantity: i.quantity,
+  })),
+  shippingAddress: a,
+  paymentMethod: method,
+};
  const {order}=await api("/orders",{method:"POST",body:JSON.stringify(payload)});
  if(method==="cod"){setCart([]);nav(`/order-success/${order._id}`);return;}
  const loaded=await loadRazorpay();if(!loaded)throw new Error("Could not load Razorpay checkout. Please try again.");

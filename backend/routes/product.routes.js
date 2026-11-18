@@ -14,14 +14,18 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    const allowedImages = ["image/jpeg", "image/png", "image/webp"];
+    const allowedVideos = ["video/mp4"];
 
-    if (allowed.includes(file.mimetype)) {
+    if (
+      allowedImages.includes(file.mimetype) ||
+      allowedVideos.includes(file.mimetype)
+    ) {
       cb(null, true);
     } else {
-      cb(new Error("Only JPG, PNG and WEBP images are allowed."));
+      cb(new Error("Only JPG, PNG, WEBP images and MP4 videos are allowed."));
     }
   }
 });
@@ -44,6 +48,15 @@ router.get("/:id", async (req, res) => {
 });
 router.post("/upload", protect, adminOnly, upload.array("images", 5), (req, res) => {
   res.status(201).json({ images: (req.files || []).map(f => `/uploads/${f.filename}`) });
+  router.post("/upload-video", protect, adminOnly, upload.single("video"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "Please select an MP4 video." });
+  }
+
+  res.status(201).json({
+    video: `/uploads/${req.file.filename}`
+  });
+});
 });
 router.post("/", protect, adminOnly, async (req, res) => {
   const data = { ...req.body, slug: (req.body.slug || req.body.name).toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") };

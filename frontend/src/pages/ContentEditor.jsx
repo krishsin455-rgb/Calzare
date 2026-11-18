@@ -46,8 +46,7 @@ const storyDefaults = {
     "Calzare is built around thoughtful design, versatile silhouettes and the small details that make getting dressed feel effortless.",
     "We believe great footwear should bring together comfort, quality and timeless style.",
   ],
-   image:
-    "https://images.unsplash.com/photo-1520256862855-9986b7946c50?w=1600&q=85",
+  image: "",
   video: "",
   buttonText: "EXPLORE COLLECTION",
   buttonLink: "/shop",
@@ -92,6 +91,15 @@ const storyFields = [
   ["buttonLink", "Button link"],
 ];
 
+const imageFields = [
+  "heroImage",
+  "menImage",
+  "womenImage",
+  "editorialImage",
+];
+
+const imageAccept = "image/jpeg,image/png,image/webp,image/avif";
+
 export default function ContentEditor({ section = "homepage" }) {
   const defaults =
     section === "homepage" ? homepageDefaults : storyDefaults;
@@ -99,7 +107,8 @@ export default function ContentEditor({ section = "homepage" }) {
   const [form, setForm] = useState(defaults);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -133,38 +142,75 @@ export default function ContentEditor({ section = "homepage" }) {
       active = false;
     };
   }, [section]);
-const handleVideoUpload = async (event) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
 
-  if (file.type !== "video/mp4") {
-    setMessage("Please select an MP4 video.");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("video", file);
-
-  setUploading(true);
-  setMessage("Uploading video...");
-
-  try {
-    const data = await api("/content/upload-story-video", {
-      method: "POST",
-      body: formData,
-    });
-
-    update("video", data.video);
-    setMessage("Video uploaded! Click Save Changes to publish it.");
-  } catch (error) {
-    setMessage(error.message || "Video upload failed.");
-  } finally {
-    setUploading(false);
-    event.target.value = "";
-  }
-};
   const update = (key, value) => {
-    setForm((current) => ({ ...current, [key]: value }));
+    setForm((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  };
+
+  const uploadContentImage = async (file, key) => {
+    if (!file) return;
+
+    if (!imageAccept.split(",").includes(file.type)) {
+      setMessage("Please select a JPG, PNG, WEBP or AVIF image.");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage("Image must be smaller than 10 MB.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    setUploadingImage(true);
+    setMessage("Uploading image...");
+
+    try {
+      const data = await api("/content/upload-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      update(key, data.image);
+      setMessage("Image uploaded! Click Save Changes to publish it.");
+    } catch (error) {
+      setMessage(error.message || "Image upload failed.");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const uploadStoryVideo = async (file) => {
+    if (!file) return;
+
+    if (file.type !== "video/mp4") {
+      setMessage("Please select an MP4 video.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("video", file);
+
+    setUploadingVideo(true);
+    setMessage("Uploading video...");
+
+    try {
+      const data = await api("/content/upload-story-video", {
+        method: "POST",
+        body: formData,
+      });
+
+      update("video", data.video);
+      setMessage("Story video uploaded! Click Save Changes to publish it.");
+    } catch (error) {
+      setMessage(error.message || "Video upload failed.");
+    } finally {
+      setUploadingVideo(false);
+    }
   };
 
   const save = async () => {
@@ -185,6 +231,41 @@ const handleVideoUpload = async (event) => {
     }
   };
 
+  const renderImageUpload = (key, label) => (
+    <div style={{ marginBottom: "20px" }}>
+      <label className="cal-content-field">
+        <span>Upload {label}</span>
+
+        <input
+          type="file"
+          accept={imageAccept}
+          disabled={uploadingImage}
+          onChange={(e) => {
+            uploadContentImage(e.target.files?.[0], key);
+            e.target.value = "";
+          }}
+        />
+      </label>
+
+      {form[key] && (
+        <img
+          src={form[key]}
+          alt={`${label} preview`}
+          style={{
+            width: "100%",
+            maxWidth: "500px",
+            height: "220px",
+            objectFit: "cover",
+            display: "block",
+            marginTop: "10px",
+            marginBottom: "20px",
+            borderRadius: "8px",
+          }}
+        />
+      )}
+    </div>
+  );
+
   if (loading) return <p>Loading content...</p>;
 
   return (
@@ -199,7 +280,7 @@ const handleVideoUpload = async (event) => {
           <p>Edit your website content from this panel.</p>
         </div>
 
-        <button onClick={save} disabled={saving}>
+        <button onClick={save} disabled={saving || uploadingImage || uploadingVideo}>
           {saving ? "Saving..." : "Save Changes"}
         </button>
       </div>
@@ -209,23 +290,29 @@ const handleVideoUpload = async (event) => {
       {section === "homepage" ? (
         <>
           {homepageFields.map(([key, label]) => (
-            <label className="cal-content-field" key={key}>
-              <span>{label}</span>
+  <div key={key}>
+    {key === "heroImage" ? (
+      renderImageUpload(key, label)
+    ) : (
+      <label className="cal-content-field">
+        <span>{label}</span>
 
-              {key.toLowerCase().includes("description") ? (
-                <textarea
-                  rows={3}
-                  value={form[key] || ""}
-                  onChange={(e) => update(key, e.target.value)}
-                />
-              ) : (
-                <input
-                  value={form[key] || ""}
-                  onChange={(e) => update(key, e.target.value)}
-                />
-              )}
-            </label>
-          ))}
+        {key.toLowerCase().includes("description") ? (
+          <textarea
+            rows={3}
+            value={form[key] || ""}
+            onChange={(e) => update(key, e.target.value)}
+          />
+        ) : (
+          <input
+            value={form[key] || ""}
+            onChange={(e) => update(key, e.target.value)}
+          />
+        )}
+      </label>
+    )}
+  </div>
+))}
 
           <h3>Trust Items</h3>
 
@@ -281,23 +368,66 @@ const handleVideoUpload = async (event) => {
       ) : (
         <>
           {storyFields.map(([key, label]) => (
-            <label className="cal-content-field" key={key}>
-              <span>{label}</span>
+            <div key={key}>
+              <label className="cal-content-field">
+                <span>{label}</span>
 
-              {key === "description" ? (
-                <textarea
-                  rows={4}
-                  value={form[key] || ""}
-                  onChange={(e) => update(key, e.target.value)}
-                />
-              ) : (
-                <input
-                  value={form[key] || ""}
-                  onChange={(e) => update(key, e.target.value)}
-                />
-              )}
-            </label>
+                {key === "description" ? (
+                  <textarea
+                    rows={4}
+                    value={form[key] || ""}
+                    onChange={(e) => update(key, e.target.value)}
+                  />
+                ) : (
+                  <input
+                    value={form[key] || ""}
+                    onChange={(e) => update(key, e.target.value)}
+                  />
+                )}
+              </label>
+
+              {key === "image" &&
+                renderImageUpload("image", "Our Story image")}
+            </div>
           ))}
+
+          <label className="cal-content-field">
+            <span>Upload Our Story Video (MP4)</span>
+
+            <input
+              type="file"
+              accept="video/mp4"
+              disabled={uploadingVideo}
+              onChange={(e) => {
+                uploadStoryVideo(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
+
+            {uploadingVideo && <p>Uploading video...</p>}
+
+            {form.video && (
+              <div>
+                <p>Video preview:</p>
+                <video
+                  src={form.video}
+                  controls
+                  playsInline
+                  style={{
+                    width: "100%",
+                    maxWidth: "500px",
+                  }}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => update("video", "")}
+                >
+                  Remove Video
+                </button>
+              </div>
+            )}
+          </label>
 
           <h3>Our Story Paragraphs</h3>
 
@@ -335,41 +465,13 @@ const handleVideoUpload = async (event) => {
               Remove Last Paragraph
             </button>
           )}
-          <div className="cal-content-field">
-  <label>
-    <span>Upload Our Story Video (MP4)</span>
-    <input
-      type="file"
-      accept="video/mp4"
-      onChange={handleVideoUpload}
-      disabled={uploading}
-    />
-  </label>
-
-  {uploading && <p>Uploading video...</p>}
-
-  {form.video && (
-    <div>
-      <p>Video uploaded:</p>
-      <video
-        src={form.video}
-        controls
-        playsInline
-        style={{ width: "100%", maxWidth: "500px" }}
-      />
-      <button
-        type="button"
-        onClick={() => update("video", "")}
-      >
-        Remove Video
-      </button>
-    </div>
-  )}
-</div>
         </>
       )}
 
-      <button onClick={save} disabled={saving}>
+      <button
+        onClick={save}
+        disabled={saving || uploadingImage || uploadingVideo}
+      >
         {saving ? "Saving..." : "Save Changes"}
       </button>
     </div>

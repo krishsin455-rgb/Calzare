@@ -16,7 +16,24 @@ console.log("CLOUDINARY CHECK:", {
   apiKey: Boolean(process.env.CLOUDINARY_API_KEY),
   apiSecret: Boolean(process.env.CLOUDINARY_API_SECRET),
 });
+const imageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/avif",
+    ];
 
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+     cb(new Error("Only JPG, PNG, WEBP and AVIF images are allowed."));
+    }
+  },
+});
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 },
@@ -63,6 +80,45 @@ router.post(
       console.error("STORY VIDEO UPLOAD ERROR:", error);
       res.status(500).json({
         message: "Could not upload story video.",
+      });
+    }
+  }
+);
+router.post(
+  "/upload-image",
+  protect,
+  adminOnly,
+  imageUpload.single("image"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          message: "Please select a valid image.",
+        });
+      }
+
+      const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: "image",
+            folder: "calzare/content",
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+
+        Readable.from(req.file.buffer).pipe(stream);
+      });
+
+      res.status(201).json({
+        image: result.secure_url,
+      });
+    } catch (error) {
+      console.error("CONTENT IMAGE UPLOAD ERROR:", error);
+      res.status(500).json({
+        message: "Could not upload image.",
       });
     }
   }

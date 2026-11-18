@@ -10,6 +10,7 @@ import {
 
 // Layout components
 import Header from "./components/Header";
+import FloatingCart from "./components/FloatingCart";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -38,6 +39,7 @@ function MainLayout() {
         <Outlet />
       </main>
       <Footer />
+      <FloatingCart />
     </>
   );
 }

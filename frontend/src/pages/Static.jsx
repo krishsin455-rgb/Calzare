@@ -13,7 +13,7 @@ export function Story() {
       "We believe great footwear should bring together comfort, quality and timeless style.",
     ],
     image:
-      "https://images.unsplash.com/photo-1520256862855-9986b7946c50?w=1600&q=85",
+    "",
     buttonText: "EXPLORE COLLECTION",
     buttonLink: "/shop",
   });
